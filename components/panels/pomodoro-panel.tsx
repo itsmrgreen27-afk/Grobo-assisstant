@@ -1,0 +1,217 @@
+'use client'
+
+import type { CSSProperties } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { formatClock, TimerControls } from './timer-controls'
+
+const DIGIT_SHADOW = '0 2px 24px rgba(0,0,0,0.45)'
+
+type Phase = 'work' | 'break'
+
+export function PomodoroPanel({
+  accent,
+  digitStyle,
+  onAlarm,
+  onStopAlarm,
+  onCountdown,
+}: {
+  accent: string
+  digitStyle?: CSSProperties
+  onAlarm?: () => void
+  onStopAlarm?: () => void
+  onCountdown?: (label: string | null) => void
+}) {
+  const [workMinutes, setWorkMinutes] = useState(25)
+  const [breakMinutes, setBreakMinutes] = useState(5)
+
+  const [phase, setPhase] = useState<Phase>('work')
+  const [remaining, setRemaining] = useState(workMinutes * 60)
+  const [running, setRunning] = useState(false)
+  const [rounds, setRounds] = useState(0)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const workSeconds = workMinutes * 60
+  const breakSeconds = breakMinutes * 60
+  const total = phase === 'work' ? workSeconds : breakSeconds
+
+  useEffect(() => {
+    onCountdown?.(running ? formatClock(remaining) : null)
+  }, [running, remaining, onCountdown])
+
+  useEffect(() => () => onCountdown?.(null), [onCountdown])
+
+  const togglePlay = useCallback(() => {
+    onStopAlarm?.()
+    setRunning((r) => !r)
+  }, [onStopAlarm])
+
+  // الاستماع للحدث الخاص بالبومودورو فقط
+  useEffect(() => {
+    const handler = () => togglePlay()
+    window.addEventListener('robo-toggle-play-pomodoro', handler)
+    return () => window.removeEventListener('robo-toggle-play-pomodoro', handler)
+  }, [togglePlay])
+
+  useEffect(() => {
+    if (!running) return
+    intervalRef.current = setInterval(() => {
+      setRemaining((prev) => {
+        if (prev <= 1) {
+          onAlarm?.()
+
+          if (phase === 'work') {
+            setRounds((r) => r + 1)
+            setPhase('break')
+            return breakSeconds
+          } else {
+            setPhase('work')
+            return workSeconds
+          }
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
+  }, [running, phase, onAlarm, workSeconds, breakSeconds])
+
+  const reset = useCallback(() => {
+    onStopAlarm?.()
+    setRunning(false)
+    setPhase('work')
+    setRemaining(workMinutes * 60)
+    setRounds(0)
+  }, [onStopAlarm, workMinutes])
+
+  const handleWorkMinutesChange = (val: number) => {
+    const mins = Math.max(1, val)
+    setWorkMinutes(mins)
+    if (phase === 'work' && !running) {
+      setRemaining(mins * 60)
+    }
+  }
+
+  const handleBreakMinutesChange = (val: number) => {
+    const mins = Math.max(1, val)
+    setBreakMinutes(mins)
+    if (phase === 'break' && !running) {
+      setRemaining(mins * 60)
+    }
+  }
+
+  if (running) {
+    return (
+      <button
+        type="button"
+        onClick={() => setRunning(false)}
+        className="flex flex-col items-center gap-2 outline-none"
+        aria-label={`${phase === 'work' ? 'Focus' : 'Break'} time remaining ${formatClock(remaining)}. Tap to pause.`}
+      >
+        <span
+          className="text-xs font-semibold uppercase tracking-[0.25em] transition-colors"
+          style={{ color: phase === 'work' ? accent : 'var(--muted-foreground)' }}
+        >
+          {phase === 'work' ? 'Focus' : 'Break'}
+        </span>
+        <span
+          className="text-7xl font-bold tabular-nums tracking-tight sm:text-8xl"
+          style={{ ...digitStyle, textShadow: DIGIT_SHADOW }}
+        >
+          {formatClock(remaining)}
+        </span>
+      </button>
+    )
+  }
+
+  const progress = 1 - remaining / total
+
+  return (
+    <div className="flex flex-col items-center gap-5">
+      <div className="flex items-center gap-2">
+        <span
+          className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider"
+          style={{
+            background:
+              phase === 'work' ? `${accent}22` : 'rgba(255,255,255,0.08)',
+            color: phase === 'work' ? accent : 'var(--muted-foreground)',
+          }}
+        >
+          {phase === 'work' ? 'Focus' : 'Break'}
+        </span>
+        <span className="text-xs font-medium text-muted-foreground">
+          {rounds} completed
+        </span>
+      </div>
+
+      <div className="relative flex items-center justify-center">
+        <svg
+          width="180"
+          height="180"
+          viewBox="0 0 180 180"
+          className="-rotate-90"
+        >
+          <circle
+            cx="90"
+            cy="90"
+            r="82"
+            fill="none"
+            stroke="rgba(255,255,255,0.08)"
+            strokeWidth="4"
+          />
+          <circle
+            cx="90"
+            cy="90"
+            r="82"
+            fill="none"
+            stroke={accent}
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeDasharray={2 * Math.PI * 82}
+            strokeDashoffset={2 * Math.PI * 82 * (1 - progress)}
+            style={{ transition: 'stroke-dashoffset 1s linear' }}
+          />
+        </svg>
+        <span
+          className="absolute text-5xl font-bold tabular-nums tracking-tight"
+          style={{ ...digitStyle, textShadow: DIGIT_SHADOW }}
+        >
+          {formatClock(remaining)}
+        </span>
+      </div>
+
+      <TimerControls
+        running={running}
+        onToggle={togglePlay}
+        onReset={reset}
+        accent={accent}
+      />
+
+      <div className="mt-2 flex items-center gap-4 rounded-xl bg-white/5 p-3 text-xs text-muted-foreground backdrop-blur-sm">
+        <div className="flex items-center gap-2">
+          <span>Focus (m):</span>
+          <input
+            type="number"
+            min="1"
+            value={workMinutes}
+            onChange={(e) => handleWorkMinutesChange(Number(e.target.value))}
+            className="w-12 rounded bg-black/30 p-1 text-center font-bold text-white outline-none focus:ring-1"
+            style={{ focusRingColor: accent }}
+          />
+        </div>
+        <div className="h-4 w-[1px] bg-white/10" />
+        <div className="flex items-center gap-2">
+          <span>Break (m):</span>
+          <input
+            type="number"
+            min="1"
+            value={breakMinutes}
+            onChange={(e) => handleBreakMinutesChange(Number(e.target.value))}
+            className="w-12 rounded bg-black/30 p-1 text-center font-bold text-white outline-none focus:ring-1"
+            style={{ focusRingColor: accent }}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
