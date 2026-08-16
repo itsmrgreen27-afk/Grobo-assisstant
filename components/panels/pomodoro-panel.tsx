@@ -72,22 +72,30 @@ export function PomodoroPanel({
 
   useEffect(() => () => onCountdown?.(null), [onCountdown])
 
-  // New logic: combined stop and start for seamless transition
-  const handleUserInteraction = useCallback(() => {
+  const stopAlarmHandler = useCallback(() => {
     if (isAlarming) {
       onStopAlarm?.()
       setIsAlarming(false)
-      setRunning(true) // Start next phase immediately
+      return true
+    }
+    return false
+  }, [isAlarming, onStopAlarm])
+
+  const togglePlay = useCallback(() => {
+    if (isAlarming) {
+      onStopAlarm?.()
+      setIsAlarming(false)
+      setRunning(true)
     } else {
       setRunning((r) => !r)
     }
   }, [isAlarming, onStopAlarm])
 
   useEffect(() => {
-    const handler = () => handleUserInteraction()
+    const handler = () => togglePlay()
     window.addEventListener('robo-toggle-play-pomodoro', handler)
     return () => window.removeEventListener('robo-toggle-play-pomodoro', handler)
-  }, [handleUserInteraction])
+  }, [togglePlay])
 
   useEffect(() => {
     if (!running) return
@@ -97,7 +105,6 @@ export function PomodoroPanel({
           setIsAlarming(true)
           onAlarm?.()
           
-          // Pause and wait for user to tap
           setRunning(false)
 
           if (phase === 'work') {
@@ -122,12 +129,11 @@ export function PomodoroPanel({
   }, [running, phase, onAlarm, workSeconds, breakSeconds])
 
   const reset = useCallback(() => {
-    onStopAlarm?.()
-    setIsAlarming(false)
+    stopAlarmHandler()
     setRunning(false)
     setPhase('work')
     setRemaining(workMinutes * 60)
-  }, [onStopAlarm, workMinutes])
+  }, [stopAlarmHandler, workMinutes])
 
   const handleWorkMinutesChange = (val: number) => {
     const mins = Math.min(180, Math.max(1, val || 1))
@@ -155,6 +161,33 @@ export function PomodoroPanel({
   const formattedTime = formatClock(remaining)
   const isLongTime = formattedTime.length > 5
 
+  // Minimal view when running
+  if (running) {
+    return (
+      <button
+        type="button"
+        onClick={() => setRunning(false)}
+        className="flex flex-col items-center gap-2 outline-none"
+        aria-label={`${phase === 'work' ? 'Focus' : 'Break'} time remaining ${formattedTime}. Tap to pause.`}
+      >
+        <span
+          className="text-xs font-semibold uppercase tracking-[0.25em] transition-colors"
+          style={{ color: phase === 'work' ? accent : 'var(--muted-foreground)' }}
+        >
+          {phase === 'work' ? 'Focus' : 'Break'}
+        </span>
+        <span
+          className={`font-bold tabular-nums tracking-tight transition-all duration-300 ${
+            isLongTime ? 'text-5xl sm:text-6xl' : 'text-7xl sm:text-8xl'
+          }`}
+          style={{ ...digitStyle, textShadow: DIGIT_SHADOW }}
+        >
+          {formattedTime}
+        </span>
+      </button>
+    )
+  }
+
   const progress = 1 - remaining / total
 
   return (
@@ -179,11 +212,7 @@ export function PomodoroPanel({
         </button>
       </div>
 
-      <button
-        type="button"
-        onClick={handleUserInteraction}
-        className="relative flex items-center justify-center outline-none transition-transform active:scale-95"
-      >
+      <div className="relative flex items-center justify-center">
         <svg width="180" height="180" viewBox="0 0 180 180" className="-rotate-90">
           <circle cx="90" cy="90" r="82" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="4" />
           <circle
@@ -207,11 +236,11 @@ export function PomodoroPanel({
         >
           {formattedTime}
         </span>
-      </button>
+      </div>
 
       <TimerControls
         running={running}
-        onToggle={handleUserInteraction}
+        onToggle={togglePlay}
         onReset={reset}
         accent={accent}
       />
