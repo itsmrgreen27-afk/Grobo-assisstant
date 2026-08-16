@@ -128,7 +128,6 @@ export function RobotAssistant() {
     })
   }, [onStopAlarm])
 
-  // التعديل الجوهري: إرسال حدث مخصص للمكون النشط فقط
   const handleTogglePlay = useCallback(() => {
     onStopAlarm()
     if (mode === 'timer') {
@@ -214,23 +213,27 @@ export function RobotAssistant() {
 
       {!zen && <PwaInstallButton accent={settings.eyeColor} />}
 
-      <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-8">
-        <RobotFace
-          eyeColor={settings.eyeColor}
-          eyeStyle={settings.eyeStyle}
-          eyeScale={settings.eyeScale}
-          eyeRoundness={settings.eyeRoundness}
-          blink={blink}
-          asleep={asleep}
-          gaze={gaze}
-          alarm={alarmActive}
-          compact={hasWidget && !zen}
-        />
+      <div className="relative z-10 flex w-full max-w-md flex-col items-center">
+        {/* العينان محتفظتان بحرية الحركة مع عزل باقي الصفحة */}
+        <div className="flex w-full justify-center">
+          <RobotFace
+            eyeColor={settings.eyeColor}
+            eyeStyle={settings.eyeStyle}
+            eyeScale={settings.eyeScale}
+            eyeRoundness={settings.eyeRoundness}
+            blink={blink}
+            asleep={asleep}
+            gaze={gaze}
+            alarm={alarmActive}
+            compact={hasWidget && !zen}
+          />
+        </div>
 
+        {/* إضافة مسافة فاصلة مريحة وثابتة (mt-10) تحت العينين تجنباً للتداخل */}
         {hasWidget && (
           <section
             aria-label={MODE_TITLES[mode as Exclude<Mode, 'robot'>]}
-            className="animate-robo-fade-up flex w-full flex-col items-center justify-center"
+            className="animate-robo-fade-up mt-10 flex w-full flex-col items-center justify-center"
           >
             <div className={mode === 'clock' ? 'flex w-full justify-center' : 'hidden'}>
               <ClockPanel digitStyle={digitStyle} />
@@ -297,7 +300,7 @@ export function RobotAssistant() {
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         settings={settings}
-        updateSetting={updateSetting}
+ updateSetting={updateSetting}
       />
 
       <TodoDrawer
