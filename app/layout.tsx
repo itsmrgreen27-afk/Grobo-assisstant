@@ -18,8 +18,8 @@ const orbitron = Orbitron({ subsets: ['latin'], variable: '--font-orbitron' })
 const vt323 = VT323({ subsets: ['latin'], weight: '400', variable: '--font-vt323' })
 
 export const metadata: Metadata = {
-  title: 'Grobo — Mobile Robot Assistant',
-  description: 'A cute robot companion with animated eyes, Pomodoro, timer, and clock modes.',
+  title: 'Grobo',
+  description: 'A cute robot companion.',
   icons: {
     icon: '/favicon.png',
     apple: '/icon-192.png',
