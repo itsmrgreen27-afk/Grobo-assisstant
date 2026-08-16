@@ -5,6 +5,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { formatClock, TimerControls } from './timer-controls'
 
 const DIGIT_SHADOW = '0 2px 24px rgba(0,0,0,0.45)'
+const STORAGE_KEY_WORK = 'pomodoro_work_minutes'
+const STORAGE_KEY_BREAK = 'pomodoro_break_minutes'
 
 type Phase = 'work' | 'break'
 
@@ -25,10 +27,31 @@ export function PomodoroPanel({
   const [breakMinutes, setBreakMinutes] = useState(5)
 
   const [phase, setPhase] = useState<Phase>('work')
-  const [remaining, setRemaining] = useState(workMinutes * 60)
+  const [remaining, setRemaining] = useState(25 * 60)
   const [running, setRunning] = useState(false)
   const [rounds, setRounds] = useState(0)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Load saved preferences on mount
+  useEffect(() => {
+    const savedWork = localStorage.getItem(STORAGE_KEY_WORK)
+    const savedBreak = localStorage.getItem(STORAGE_KEY_BREAK)
+
+    if (savedWork) {
+      const parsedWork = Number(savedWork)
+      if (!isNaN(parsedWork) && parsedWork > 0) {
+        setWorkMinutes(parsedWork)
+        setRemaining(parsedWork * 60)
+      }
+    }
+
+    if (savedBreak) {
+      const parsedBreak = Number(savedBreak)
+      if (!isNaN(parsedBreak) && parsedBreak > 0) {
+        setBreakMinutes(parsedBreak)
+      }
+    }
+  }, [])
 
   const workSeconds = workMinutes * 60
   const breakSeconds = breakMinutes * 60
@@ -45,7 +68,6 @@ export function PomodoroPanel({
     setRunning((r) => !r)
   }, [onStopAlarm])
 
-  // الاستماع للحدث الخاص بالبومودورو فقط
   useEffect(() => {
     const handler = () => togglePlay()
     window.addEventListener('robo-toggle-play-pomodoro', handler)
@@ -87,6 +109,7 @@ export function PomodoroPanel({
   const handleWorkMinutesChange = (val: number) => {
     const mins = Math.min(180, Math.max(1, val || 1))
     setWorkMinutes(mins)
+    localStorage.setItem(STORAGE_KEY_WORK, String(mins))
     if (phase === 'work' && !running) {
       setRemaining(mins * 60)
     }
@@ -95,6 +118,7 @@ export function PomodoroPanel({
   const handleBreakMinutesChange = (val: number) => {
     const mins = Math.min(60, Math.max(1, val || 1))
     setBreakMinutes(mins)
+    localStorage.setItem(STORAGE_KEY_BREAK, String(mins))
     if (phase === 'break' && !running) {
       setRemaining(mins * 60)
     }
