@@ -24,7 +24,6 @@ type Reaction = null | 'wink-left' | 'wink-right' | 'double' | 'wobble'
 const EYE_W = 'clamp(64px, 14vw, 132px)'
 const EYE_H = 'clamp(96px, 20vw, 188px)'
 
-/** Base geometry (open state) for each eye style. */
 function eyeGeometry(
   style: EyeStyle,
   side: Side,
@@ -40,7 +39,6 @@ function eyeGeometry(
         background: color,
       }
     case 'anime':
-      // Sleek, solid angled slit — connected polygon, mirrored per side.
       return {
         width: EYE_W,
         height: 'clamp(80px, 17vw, 160px)',
@@ -52,7 +50,6 @@ function eyeGeometry(
             : 'polygon(0% 0%, 100% 22%, 100% 100%, 0% 100%)',
       }
     case 'neon':
-      // Minimalist horizontal glowing dash bar.
       return {
         width: 'clamp(72px, 16vw, 148px)',
         height: 'clamp(16px, 3.4vw, 30px)',
@@ -70,10 +67,6 @@ function eyeGeometry(
   }
 }
 
-/**
- * A solid, filled happy eye — a half-circle / dome with a flat base at the
- * bottom and a smooth rounded top, matching the solid fill of other styles.
- */
 function HappyEye({ color }: { color: string }) {
   return (
     <svg
@@ -82,7 +75,6 @@ function HappyEye({ color }: { color: string }) {
       preserveAspectRatio="none"
       style={{ width: EYE_W, height: 'clamp(52px, 11vw, 104px)' }}
     >
-      {/* Semi-circle: flat base along the bottom, rounded dome on top. */}
       <path d="M 0 50 A 50 50 0 0 1 100 50 Z" fill={color} />
     </svg>
   )
@@ -138,7 +130,7 @@ export function RobotFace({
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
 
   const maxShift = compact ? 10 : 18
-  const translate = `translate(${gaze.x * maxShift}px, ${gaze.y * maxShift}px) scale(${eyeScale})`
+  const translate = `translate3d(${gaze.x * maxShift}px, ${gaze.y * maxShift}px, 0) scale(${eyeScale})`
 
   const clearTimers = useCallback(() => {
     timers.current.forEach(clearTimeout)
@@ -150,7 +142,6 @@ export function RobotFace({
     timers.current.push(id)
   }, [])
 
-  // Alarm energetically shakes the eyes; otherwise rest at neutral.
   useEffect(() => {
     if (alarm) {
       controls.start({
@@ -172,14 +163,12 @@ export function RobotFace({
 
   useEffect(() => () => clearTimers(), [clearTimers])
 
-  // Randomized, smooth micro-reaction on tap / click (without happy eyes).
   const handleTap = useCallback(() => {
     if (alarm) return
     clearTimers()
     const roll = Math.floor(Math.random() * 3)
 
     if (roll === 0) {
-      // Playful single wink.
       const side: Reaction = Math.random() < 0.5 ? 'wink-left' : 'wink-right'
       setReaction(side)
       setReactBlink({
@@ -191,13 +180,11 @@ export function RobotFace({
         setReaction(null)
       }, 300)
     } else if (roll === 1) {
-      // Quick double-blink.
       setReactBlink({ left: true, right: true })
       track(() => setReactBlink({ left: false, right: false }), 110)
       track(() => setReactBlink({ left: true, right: true }), 220)
       track(() => setReactBlink(null), 340)
     } else {
-      // Squash-and-stretch wobble.
       setReaction('wobble')
       controls
         .start({
@@ -216,7 +203,11 @@ export function RobotFace({
 
   return (
     <div
-      className={compact ? 'relative' : 'relative animate-robo-float'}
+      className={compact ? 'relative flex items-center justify-center' : 'relative flex items-center justify-center animate-robo-float'}
+      style={{
+        width: 'clamp(220px, 45vw, 420px)',
+        height: EYE_H,
+      }}
       role="img"
       aria-label={asleep ? 'Robot sleeping' : 'Robot looking around. Tap to interact.'}
     >
@@ -236,14 +227,15 @@ export function RobotFace({
         type="button"
         onClick={handleTap}
         aria-label="Poke the robot"
-        className="block cursor-pointer select-none rounded-3xl outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+        className="relative flex items-center justify-center cursor-pointer select-none rounded-3xl outline-none focus-visible:ring-2 focus-visible:ring-white/40"
       >
+        {/* الحاوية الداخلية فقط هي من تتحرك بالـ translate مع حماية الهيكل الخارجي من الاهتزاز */}
         <div
-          className="transition-transform duration-300 ease-out"
+          className="transition-transform duration-200 ease-out will-change-transform flex items-center justify-center"
           style={{ transform: translate }}
         >
           <motion.div
-            className="flex items-center will-change-transform"
+            className="flex items-center justify-center will-change-transform"
             style={{ gap: 'clamp(18px, 4vw, 44px)' }}
             animate={controls}
           >
