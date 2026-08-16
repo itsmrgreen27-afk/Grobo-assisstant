@@ -198,7 +198,10 @@ export function RobotAssistant() {
     <main
       onPointerDown={primeAudio}
       onMouseMove={handleMouseMove}
-      className="relative flex min-h-svh flex-col items-center justify-between pb-24 pt-8 px-4 overflow-hidden transition-colors duration-500"
+      onClick={zen ? handleExitZen : undefined}
+      className={`relative flex min-h-svh flex-col items-center justify-between pb-24 pt-8 px-4 overflow-hidden transition-colors duration-500 ${
+        zen ? 'cursor-pointer' : ''
+      }`}
       style={{
         background: settings.backgroundColor,
         color: 'var(--foreground)',
@@ -211,7 +214,6 @@ export function RobotAssistant() {
         light={light}
       />
 
-      {/* زر دخول وضع Zen مخصص للجوّال في أعلى اليسار */}
       {!zen && (
         <button
           type="button"
