@@ -2,33 +2,33 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Robo — Desktop Robot Assistant',
-    short_name: 'Robo',
+    name: 'Grobo — Mobile Robot Assistant',
+    short_name: 'Grobo',
     description:
-      'A cute desktop robot companion with animated eyes, Pomodoro, timer, and clock modes.',
+      'A cute robot companion with animated eyes, Pomodoro, timer, and clock modes.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#0d1117',
-    theme_color: '#0d1117',
+    background_color: '#000000',
+    theme_color: '#000000',
     orientation: 'portrait-primary',
     categories: ['productivity', 'utilities'],
     icons: [
       {
-        src: '/icon.svg',
-        type: 'image/svg+xml',
-        sizes: 'any',
+        src: '/icon-192.png',
+        type: 'image/png',
+        sizes: '192x192',
         purpose: 'any',
       },
       {
-        src: '/icon-dark-32x32.png',
+        src: '/icon-512.png',
         type: 'image/png',
-        sizes: '32x32',
+        sizes: '512x512',
+        purpose: 'any',
       },
       {
-        src: '/apple-icon.png',
+        src: '/favicon.png',
         type: 'image/png',
-        sizes: '180x180',
-        purpose: 'maskable',
+        sizes: 'any',
       },
     ],
   }
