@@ -149,7 +149,7 @@ export function RobotAssistant() {
       if (next) {
         setSettingsOpen(false)
         setTodoOpen(false)
-        flashHint('Zen mode — press Esc or F to exit')
+        flashHint('Zen mode — tap anywhere or press Esc to exit')
       }
       return next
     })
@@ -211,10 +211,23 @@ export function RobotAssistant() {
         light={light}
       />
 
+      {/* زر دخول وضع Zen مخصص للجوّال في أعلى اليسار */}
+      {!zen && (
+        <button
+          type="button"
+          onClick={handleToggleZen}
+          aria-label="Enter Zen Mode"
+          className="fixed left-4 top-4 z-30 flex items-center justify-center rounded-full border border-white/10 bg-white/5 p-2.5 text-foreground/70 backdrop-blur-xl transition hover:bg-white/10 hover:text-foreground active:scale-95"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+          </svg>
+        </button>
+      )}
+
       {!zen && <PwaInstallButton accent={settings.eyeColor} />}
 
       <div className="relative z-10 flex w-full max-w-md flex-col items-center my-auto gap-2">
-        {/* العينان */}
         <div className="flex w-full justify-center">
           <RobotFace
             eyeColor={settings.eyeColor}
@@ -229,7 +242,6 @@ export function RobotAssistant() {
           />
         </div>
 
-        {/* لوحة التحكم والعداد مع رفع القيمة للأعلى وتقليل التباعد المفرط */}
         {hasWidget && (
           <section
             aria-label={MODE_TITLES[mode as Exclude<Mode, 'robot'>]}
@@ -292,7 +304,7 @@ export function RobotAssistant() {
             showExitZenBtn ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
         >
-          Exit Zen (Esc)
+          Exit Zen
         </button>
       )}
 
