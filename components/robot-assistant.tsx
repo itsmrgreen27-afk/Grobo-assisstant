@@ -198,7 +198,7 @@ export function RobotAssistant() {
     <main
       onPointerDown={primeAudio}
       onMouseMove={handleMouseMove}
-      className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden px-4 transition-colors duration-500"
+      className="relative flex min-h-svh flex-col items-center justify-between pb-24 pt-8 px-4 overflow-hidden transition-colors duration-500"
       style={{
         background: settings.backgroundColor,
         color: 'var(--foreground)',
@@ -213,8 +213,8 @@ export function RobotAssistant() {
 
       {!zen && <PwaInstallButton accent={settings.eyeColor} />}
 
-      <div className="relative z-10 flex w-full max-w-md flex-col items-center">
-        {/* العينان محتفظتان بحرية الحركة مع عزل باقي الصفحة */}
+      <div className="relative z-10 flex w-full max-w-md flex-col items-center my-auto gap-2">
+        {/* العينان */}
         <div className="flex w-full justify-center">
           <RobotFace
             eyeColor={settings.eyeColor}
@@ -229,11 +229,11 @@ export function RobotAssistant() {
           />
         </div>
 
-        {/* إضافة مسافة فاصلة مريحة وثابتة (mt-10) تحت العينين تجنباً للتداخل */}
+        {/* لوحة التحكم والعداد مع رفع القيمة للأعلى وتقليل التباعد المفرط */}
         {hasWidget && (
           <section
             aria-label={MODE_TITLES[mode as Exclude<Mode, 'robot'>]}
-            className="animate-robo-fade-up mt-10 flex w-full flex-col items-center justify-center"
+            className="animate-robo-fade-up -mt-2 flex w-full flex-col items-center justify-center"
           >
             <div className={mode === 'clock' ? 'flex w-full justify-center' : 'hidden'}>
               <ClockPanel digitStyle={digitStyle} />
@@ -300,7 +300,7 @@ export function RobotAssistant() {
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         settings={settings}
- updateSetting={updateSetting}
+        updateSetting={updateSetting}
       />
 
       <TodoDrawer
