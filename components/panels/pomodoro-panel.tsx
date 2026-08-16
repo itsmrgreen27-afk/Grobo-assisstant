@@ -85,7 +85,7 @@ export function PomodoroPanel({
   }, [onStopAlarm, workMinutes])
 
   const handleWorkMinutesChange = (val: number) => {
-    const mins = Math.max(1, val)
+    const mins = Math.min(180, Math.max(1, val || 1))
     setWorkMinutes(mins)
     if (phase === 'work' && !running) {
       setRemaining(mins * 60)
@@ -93,12 +93,15 @@ export function PomodoroPanel({
   }
 
   const handleBreakMinutesChange = (val: number) => {
-    const mins = Math.max(1, val)
+    const mins = Math.min(60, Math.max(1, val || 1))
     setBreakMinutes(mins)
     if (phase === 'break' && !running) {
       setRemaining(mins * 60)
     }
   }
+
+  const formattedTime = formatClock(remaining)
+  const isLongTime = formattedTime.length > 5
 
   if (running) {
     return (
@@ -106,7 +109,7 @@ export function PomodoroPanel({
         type="button"
         onClick={() => setRunning(false)}
         className="flex flex-col items-center gap-2 outline-none"
-        aria-label={`${phase === 'work' ? 'Focus' : 'Break'} time remaining ${formatClock(remaining)}. Tap to pause.`}
+        aria-label={`${phase === 'work' ? 'Focus' : 'Break'} time remaining ${formattedTime}. Tap to pause.`}
       >
         <span
           className="text-xs font-semibold uppercase tracking-[0.25em] transition-colors"
@@ -115,10 +118,12 @@ export function PomodoroPanel({
           {phase === 'work' ? 'Focus' : 'Break'}
         </span>
         <span
-          className="text-7xl font-bold tabular-nums tracking-tight sm:text-8xl"
+          className={`font-bold tabular-nums tracking-tight transition-all duration-300 ${
+            isLongTime ? 'text-5xl sm:text-6xl' : 'text-7xl sm:text-8xl'
+          }`}
           style={{ ...digitStyle, textShadow: DIGIT_SHADOW }}
         >
-          {formatClock(remaining)}
+          {formattedTime}
         </span>
       </button>
     )
@@ -173,10 +178,12 @@ export function PomodoroPanel({
           />
         </svg>
         <span
-          className="absolute text-5xl font-bold tabular-nums tracking-tight"
+          className={`absolute font-bold tabular-nums tracking-tight transition-all duration-300 ${
+            isLongTime ? 'text-3xl' : 'text-5xl'
+          }`}
           style={{ ...digitStyle, textShadow: DIGIT_SHADOW }}
         >
-          {formatClock(remaining)}
+          {formattedTime}
         </span>
       </div>
 
@@ -193,6 +200,7 @@ export function PomodoroPanel({
           <input
             type="number"
             min="1"
+            max="180"
             value={workMinutes}
             onChange={(e) => handleWorkMinutesChange(Number(e.target.value))}
             className="w-12 rounded bg-black/30 p-1 text-center font-bold text-white outline-none focus:ring-1"
@@ -205,6 +213,7 @@ export function PomodoroPanel({
           <input
             type="number"
             min="1"
+            max="60"
             value={breakMinutes}
             onChange={(e) => handleBreakMinutesChange(Number(e.target.value))}
             className="w-12 rounded bg-black/30 p-1 text-center font-bold text-white outline-none focus:ring-1"
