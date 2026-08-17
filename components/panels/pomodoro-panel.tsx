@@ -7,9 +7,13 @@ import { formatClock, TimerControls } from './timer-controls'
 const DIGIT_SHADOW = '0 2px 24px rgba(0,0,0,0.45)'
 const STORAGE_KEY_WORK = 'pomodoro_work_minutes'
 const STORAGE_KEY_BREAK = 'pomodoro_break_minutes'
+const STORAGE_KEY_LONG_BREAK = 'pomodoro_long_break_minutes'
+const STORAGE_KEY_INTERVAL = 'pomodoro_long_break_interval'
+const STORAGE_KEY_AUTO_BREAK = 'pomodoro_auto_start_breaks'
+const STORAGE_KEY_AUTO_FOCUS = 'pomodoro_auto_start_focus'
 const STORAGE_KEY_ROUNDS = 'pomodoro_completed_rounds'
 
-type Phase = 'work' | 'break'
+type Phase = 'work' | 'break' | 'longBreak'
 
 export function PomodoroPanel({
   accent,
@@ -26,6 +30,10 @@ export function PomodoroPanel({
 }) {
   const [workMinutes, setWorkMinutes] = useState(25)
   const [breakMinutes, setBreakMinutes] = useState(5)
+  const [longBreakMinutes, setLongBreakMinutes] = useState(15)
+  const [longBreakInterval, setLongBreakInterval] = useState(4)
+  const [autoStartBreaks, setAutoStartBreaks] = useState(false)
+  const [autoStartFocus, setAutoFocus] = useState(false)
 
   const [phase, setPhase] = useState<Phase>('work')
   const [remaining, setRemaining] = useState(25 * 60)
@@ -35,46 +43,48 @@ export function PomodoroPanel({
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const syncSettings = useCallback(() => {
+    if (typeof window === 'undefined') return
+
     const savedWork = localStorage.getItem(STORAGE_KEY_WORK)
     const savedBreak = localStorage.getItem(STORAGE_KEY_BREAK)
+    const savedLongBreak = localStorage.getItem(STORAGE_KEY_LONG_BREAK)
+    const savedInterval = localStorage.getItem(STORAGE_KEY_INTERVAL)
+    const savedAutoBreak = localStorage.getItem(STORAGE_KEY_AUTO_BREAK)
+    const savedAutoFocus = localStorage.getItem(STORAGE_KEY_AUTO_FOCUS)
 
-    let w = 25
-    let b = 5
-
-    if (savedWork) {
-      const parsedWork = Number(savedWork)
-      if (!isNaN(parsedWork) && parsedWork > 0) w = parsedWork
-    }
-
-    if (savedBreak) {
-      const parsedBreak = Number(savedBreak)
-      if (!isNaN(parsedBreak) && parsedBreak > 0) b = parsedBreak
-    }
+    let w = savedWork ? Number(savedWork) || 25 : 25
+    let b = savedBreak ? Number(savedBreak) || 5 : 5
+    let lb = savedLongBreak ? Number(savedLongBreak) || 15 : 15
+    let inter = savedInterval ? Number(savedInterval) || 4 : 4
 
     setWorkMinutes(w)
     setBreakMinutes(b)
+    setLongBreakMinutes(lb)
+    setLongBreakInterval(inter)
+    setAutoStartBreaks(savedAutoBreak === 'true')
+    setAutoFocus(savedAutoFocus === 'true')
 
     if (!running && !isAlarming) {
-      setRemaining((phase === 'work' ? w : b) * 60)
+      if (phase === 'work') setRemaining(w * 60)
+      else if (phase === 'break') setRemaining(b * 60)
+      else setRemaining(lb * 60)
     }
   }, [running, isAlarming, phase])
 
   useEffect(() => {
     syncSettings()
 
-    const savedRounds = localStorage.getItem(STORAGE_KEY_ROUNDS)
-    if (savedRounds) {
-      const parsedRounds = Number(savedRounds)
-      if (!isNaN(parsedRounds) && parsedRounds >= 0) {
-        setRounds(parsedRounds)
+    if (typeof window !== 'undefined') {
+      const savedRounds = localStorage.getItem(STORAGE_KEY_ROUNDS)
+      if (savedRounds) {
+        const parsedRounds = Number(savedRounds)
+        if (!isNaN(parsedRounds) && parsedRounds >= 0) {
+          setRounds(parsedRounds)
+        }
       }
     }
 
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY_WORK || e.key === STORAGE_KEY_BREAK) {
-        syncSettings()
-      }
-    }
+    const handleStorage = () => syncSettings()
     window.addEventListener('storage', handleStorage)
     window.addEventListener('pomodoro-settings-updated', syncSettings)
 
@@ -84,9 +94,13 @@ export function PomodoroPanel({
     }
   }, [syncSettings])
 
-  const workSeconds = workMinutes * 60
-  const breakSeconds = breakMinutes * 60
-  const total = phase === 'work' ? workSeconds : breakSeconds
+  const getCurrentTotalSeconds = () => {
+    if (phase === 'work') return workMinutes * 60
+    if (phase === 'break') return breakMinutes * 60
+    return longBreakMinutes * 60
+  }
+
+  const total = getCurrentTotalSeconds()
 
   useEffect(() => {
     onCountdown?.(running ? formatClock(remaining) : null)
@@ -127,19 +141,24 @@ export function PomodoroPanel({
           setIsAlarming(true)
           onAlarm?.()
 
-          setRunning(false)
-
           if (phase === 'work') {
-            setRounds((prevRounds) => {
-              const newRounds = prevRounds + 1
-              localStorage.setItem(STORAGE_KEY_ROUNDS, String(newRounds))
-              return newRounds
-            })
-            setPhase('break')
-            return breakSeconds
+            const nextRounds = rounds + 1
+            setRounds(nextRounds)
+            if (typeof window !== 'undefined') {
+              localStorage.setItem(STORAGE_KEY_ROUNDS, String(nextRounds))
+            }
+
+            const isLongBreakTime = nextRounds % longBreakInterval === 0
+            const nextPhase: Phase = isLongBreakTime ? 'longBreak' : 'break'
+            const nextTime = (isLongBreakTime ? longBreakMinutes : breakMinutes) * 60
+
+            setPhase(nextPhase)
+            setRunning(autoStartBreaks)
+            return nextTime
           } else {
             setPhase('work')
-            return workSeconds
+            setRunning(autoStartFocus)
+            return workMinutes * 60
           }
         }
         return prev - 1
@@ -148,7 +167,18 @@ export function PomodoroPanel({
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [running, phase, onAlarm, workSeconds, breakSeconds])
+  }, [
+    running,
+    phase,
+    rounds,
+    onAlarm,
+    workMinutes,
+    breakMinutes,
+    longBreakMinutes,
+    longBreakInterval,
+    autoStartBreaks,
+    autoStartFocus,
+  ])
 
   const reset = useCallback(() => {
     stopAlarmHandler()
@@ -159,11 +189,19 @@ export function PomodoroPanel({
 
   const handleResetRounds = () => {
     setRounds(0)
-    localStorage.setItem(STORAGE_KEY_ROUNDS, '0')
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_ROUNDS, '0')
+    }
   }
 
   const formattedTime = formatClock(remaining)
   const isLongTime = formattedTime.length > 5
+
+  const getPhaseLabel = () => {
+    if (phase === 'work') return 'Focus'
+    if (phase === 'break') return 'Break'
+    return 'Long Break'
+  }
 
   if (running) {
     return (
@@ -171,13 +209,13 @@ export function PomodoroPanel({
         type="button"
         onClick={() => setRunning(false)}
         className="flex flex-col items-center gap-2 outline-none"
-        aria-label={`${phase === 'work' ? 'Focus' : 'Break'} time remaining ${formattedTime}. Tap to pause.`}
+        aria-label={`${getPhaseLabel()} time remaining ${formattedTime}. Tap to pause.`}
       >
         <span
           className="text-xs font-semibold uppercase tracking-[0.25em] transition-colors"
           style={{ color: phase === 'work' ? accent : 'var(--muted-foreground)' }}
         >
-          {phase === 'work' ? 'Focus' : 'Break'}
+          {getPhaseLabel()}
         </span>
         <span
           className={`font-bold tabular-nums tracking-tight transition-all duration-300 ${
@@ -203,7 +241,7 @@ export function PomodoroPanel({
             color: phase === 'work' ? accent : 'var(--muted-foreground)',
           }}
         >
-          {phase === 'work' ? 'Focus' : 'Break'}
+          {getPhaseLabel()}
         </span>
         <button
           type="button"
