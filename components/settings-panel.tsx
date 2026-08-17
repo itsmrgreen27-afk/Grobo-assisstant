@@ -248,6 +248,8 @@ export function SettingsPanel({
   const [autoStartFocus, setAutoStartFocus] = useState(false)
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+
     const savedWork = localStorage.getItem(STORAGE_KEY_WORK)
     const savedBreak = localStorage.getItem(STORAGE_KEY_BREAK)
     const savedLongBreak = localStorage.getItem(STORAGE_KEY_LONG_BREAK)
@@ -260,51 +262,65 @@ export function SettingsPanel({
     if (savedLongBreak) setLongBreakTime(Number(savedLongBreak) || 15)
     if (savedInterval) setLongBreakInterval(Number(savedInterval) || 4)
     if (savedAutoBreak) setAutoStartBreaks(savedAutoBreak === 'true')
-    if (savedAutoFocus) setAutoFocus(savedAutoFocus === 'true')
+    if (savedAutoFocus) setAutoStartFocus(savedAutoFocus === 'true')
   }, [open])
 
   const notifyUpdate = () => {
-    window.dispatchEvent(new Event('pomodoro-settings-updated'))
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('pomodoro-settings-updated'))
+    }
   }
 
   const handleWorkChange = (val: number) => {
     const mins = Math.min(180, Math.max(1, val || 1))
     setWorkTime(mins)
-    localStorage.setItem(STORAGE_KEY_WORK, String(mins))
-    notifyUpdate()
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_WORK, String(mins))
+      notifyUpdate()
+    }
   }
 
   const handleBreakChange = (val: number) => {
     const mins = Math.min(60, Math.max(1, val || 1))
     setBreakTime(mins)
-    localStorage.setItem(STORAGE_KEY_BREAK, String(mins))
-    notifyUpdate()
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_BREAK, String(mins))
+      notifyUpdate()
+    }
   }
 
   const handleLongBreakChange = (val: number) => {
     const mins = Math.min(180, Math.max(1, val || 1))
     setLongBreakTime(mins)
-    localStorage.setItem(STORAGE_KEY_LONG_BREAK, String(mins))
-    notifyUpdate()
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_LONG_BREAK, String(mins))
+      notifyUpdate()
+    }
   }
 
   const handleIntervalChange = (val: number) => {
     const interval = Math.min(12, Math.max(1, val || 1))
     setLongBreakInterval(interval)
-    localStorage.setItem(STORAGE_KEY_INTERVAL, String(interval))
-    notifyUpdate()
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_INTERVAL, String(interval))
+      notifyUpdate()
+    }
   }
 
   const handleAutoBreakToggle = (val: boolean) => {
     setAutoStartBreaks(val)
-    localStorage.setItem(STORAGE_KEY_AUTO_BREAK, String(val))
-    notifyUpdate()
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_AUTO_BREAK, String(val))
+      notifyUpdate()
+    }
   }
 
   const handleAutoFocusToggle = (val: boolean) => {
     setAutoStartFocus(val)
-    localStorage.setItem(STORAGE_KEY_AUTO_FOCUS, String(val))
-    notifyUpdate()
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_AUTO_FOCUS, String(val))
+      notifyUpdate()
+    }
   }
 
   useEffect(() => {
@@ -333,7 +349,6 @@ export function SettingsPanel({
         aria-modal="true"
         aria-label="Settings"
         aria-hidden={!open}
-        inert={!open}
         className="fixed right-0 top-0 z-50 flex h-full w-[min(88vw,380px)] flex-col border-l border-white/10 bg-neutral-950/80 text-white shadow-2xl backdrop-blur-xl transition-transform duration-300 ease-out"
         style={{ transform: open ? 'translateX(0)' : 'translateX(100%)' }}
       >
