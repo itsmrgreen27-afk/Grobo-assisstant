@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, ChevronDown, Volume2, X } from 'lucide-react'
+import { Check, ChevronDown, Volume2, X, Palette, Timer } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
@@ -61,8 +61,8 @@ function EyeStyleGrid({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <span className="text-sm font-medium text-white">Eye Style</span>
-      <div className="grid grid-cols-3 gap-2.5">
+      <span className="text-xs font-semibold text-white/80">Eye Style</span>
+      <div className="grid grid-cols-3 gap-2">
         {EYE_STYLES.map((s) => {
           const active = value === s.value
           return (
@@ -74,22 +74,22 @@ function EyeStyleGrid({
                 onChange(s.value)
               }}
               aria-pressed={active}
-              className="flex flex-col items-center gap-2 rounded-xl border p-2.5 transition-colors duration-150"
+              className="flex flex-col items-center gap-1.5 rounded-xl border p-2 transition-all duration-150"
               style={{
                 borderColor: active
-                  ? 'rgba(56,225,214,0.6)'
-                  : 'rgba(255,255,255,0.1)',
+                  ? '#38e1d6'
+                  : 'rgba(255,255,255,0.08)',
                 background: active
-                  ? 'rgba(56,225,214,0.1)'
+                  ? 'rgba(56,225,214,0.12)'
                   : 'rgba(255,255,255,0.03)',
               }}
             >
-              <span className="flex h-8 items-center justify-center gap-1">
+              <span className="flex h-6 items-center justify-center gap-1">
                 <MiniEye style={s.value} side="left" />
                 <MiniEye style={s.value} side="right" />
               </span>
               <span
-                className="text-[11px] font-medium leading-tight text-white/70"
+                className="text-[10px] font-medium leading-tight text-white/70"
                 style={active ? { color: '#7ff0e7' } : undefined}
               >
                 {s.name}
@@ -114,9 +114,9 @@ function ColorField({
   onChange: (v: string) => void
 }) {
   return (
-    <div className="flex flex-col gap-3">
-      <span className="text-sm font-medium text-white">{label}</span>
-      <div className="flex flex-wrap gap-2.5">
+    <div className="flex flex-col gap-2.5">
+      <span className="text-xs font-semibold text-white/80">{label}</span>
+      <div className="flex flex-wrap gap-2">
         {presets.map((preset) => {
           const active = value.toLowerCase() === preset.value.toLowerCase()
           return (
@@ -127,12 +127,12 @@ function ColorField({
               aria-label={preset.name}
               aria-pressed={active}
               title={preset.name}
-              className="relative flex h-9 w-9 items-center justify-center rounded-full border border-white/15 transition-transform duration-150 hover:scale-110"
+              className="relative flex h-8 w-8 items-center justify-center rounded-full border border-white/15 transition-transform duration-150 hover:scale-105"
               style={{ background: preset.value }}
             >
               {active && (
                 <Check
-                  className="h-4 w-4 drop-shadow"
+                  className="h-3.5 w-3.5 drop-shadow"
                   style={{ color: '#000', mixBlendMode: 'difference' }}
                 />
               )}
@@ -140,17 +140,17 @@ function ColorField({
           )
         })}
       </div>
-      <label className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-        <span className="text-sm text-white/60">Custom Color</span>
+      <label className="flex items-center justify-between rounded-lg border border-white/10 bg-black/20 px-3 py-1.5">
+        <span className="text-xs text-white/60">Custom Color</span>
         <span className="flex items-center gap-2">
-          <span className="font-mono text-xs uppercase text-white/60">
+          <span className="font-mono text-[10px] uppercase text-white/60">
             {value}
           </span>
           <input
             type="color"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="h-8 w-10 cursor-pointer rounded-md border border-white/10 bg-transparent p-0.5"
+            className="h-6 w-8 cursor-pointer rounded border border-white/10 bg-transparent p-0.5"
             aria-label={`${label} custom color`}
           />
         </span>
@@ -177,10 +177,10 @@ function SliderField({
   onChange: (v: number) => void
 }) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-white">{label}</span>
-        <span className="font-mono text-xs text-white/60">{display}</span>
+        <span className="text-xs font-medium text-white/80">{label}</span>
+        <span className="font-mono text-[11px] text-white/60">{display}</span>
       </div>
       <input
         type="range"
@@ -189,7 +189,7 @@ function SliderField({
         step={step}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-white/10"
+        className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-white/10"
         style={{ accentColor: '#38e1d6' }}
       />
     </div>
@@ -208,8 +208,8 @@ function DropdownField<T extends string>({
   onChange: (v: T) => void
 }) {
   return (
-    <label className="flex flex-col gap-2.5">
-      <span className="text-sm font-medium text-white">{label}</span>
+    <label className="flex flex-col gap-2">
+      <span className="text-xs font-semibold text-white/80">{label}</span>
       <div className="relative">
         <select
           value={value}
@@ -217,7 +217,7 @@ function DropdownField<T extends string>({
             playClick()
             onChange(e.target.value as T)
           }}
-          className="w-full cursor-pointer appearance-none rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-medium text-white outline-none transition-colors hover:bg-white/10 focus-visible:border-[rgba(56,225,214,0.6)]"
+          className="w-full cursor-pointer appearance-none rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs font-medium text-white outline-none transition-colors hover:bg-white/10 focus-visible:border-[#38e1d6]"
         >
           {options.map((o) => (
             <option key={o.value} value={o.value} className="bg-neutral-900 text-white">
@@ -226,7 +226,7 @@ function DropdownField<T extends string>({
           ))}
         </select>
         <ChevronDown
-          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/50"
+          className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/50"
           aria-hidden="true"
         />
       </div>
@@ -240,6 +240,7 @@ export function SettingsPanel({
   settings,
   updateSetting,
 }: SettingsPanelProps) {
+  const [activeTab, setActiveTab] = useState<'appearance' | 'timer'>('appearance')
   const [workTime, setWorkTime] = useState(25)
   const [breakTime, setBreakTime] = useState(5)
   const [longBreakTime, setLongBreakTime] = useState(15)
@@ -337,7 +338,7 @@ export function SettingsPanel({
       <div
         onClick={onClose}
         aria-hidden="true"
-        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
+        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
         style={{
           opacity: open ? 1 : 0,
           pointerEvents: open ? 'auto' : 'none',
@@ -349,7 +350,7 @@ export function SettingsPanel({
         aria-modal="true"
         aria-label="Settings"
         aria-hidden={!open}
-        className="fixed right-0 top-0 z-50 flex h-full w-[min(88vw,380px)] flex-col border-l border-white/10 bg-neutral-950/80 text-white shadow-2xl backdrop-blur-xl transition-transform duration-300 ease-out"
+        className="fixed right-0 top-0 z-50 flex h-full w-[min(88vw,380px)] flex-col border-l border-white/10 bg-neutral-950/90 text-white shadow-2xl backdrop-blur-2xl transition-transform duration-300 ease-out"
         style={{ transform: open ? 'translateX(0)' : 'translateX(100%)' }}
       >
         <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
@@ -358,203 +359,233 @@ export function SettingsPanel({
             type="button"
             onClick={onClose}
             aria-label="Close settings"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </header>
 
-        <div className="flex flex-col gap-7 overflow-y-auto px-5 py-6">
-          <div className="flex flex-col gap-6">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#38e1d6]">
-              Appearance & Character
-            </h3>
-            
-            <EyeStyleGrid
-              value={settings.eyeStyle}
-              onChange={(v) => updateSetting('eyeStyle', v)}
-            />
-
-            <ColorField
-              label="Eye Color"
-              presets={EYE_COLOR_PRESETS}
-              value={settings.eyeColor}
-              onChange={(v) => updateSetting('eyeColor', v)}
-            />
-            <ColorField
-              label="Background Color"
-              presets={BACKGROUND_PRESETS}
-              value={settings.backgroundColor}
-              onChange={(v) => updateSetting('backgroundColor', v)}
-            />
-
-            <DropdownField<BackgroundEffect>
-              label="Background Effect"
-              options={BACKGROUND_EFFECTS}
-              value={settings.backgroundEffect}
-              onChange={(v) => updateSetting('backgroundEffect', v)}
-            />
-
-            <SliderField
-              label="Eye Scale"
-              value={settings.eyeScale}
-              min={0.6}
-              max={1.4}
-              step={0.05}
-              display={`${settings.eyeScale.toFixed(2)}x`}
-              onChange={(v) => updateSetting('eyeScale', v)}
-            />
-            <SliderField
-              label="Eye Roundness"
-              value={settings.eyeRoundness}
-              min={10}
-              max={50}
-              step={2}
-              display={`${settings.eyeRoundness}%`}
-              onChange={(v) => updateSetting('eyeRoundness', v)}
-            />
-
-            <SliderField
-              label="Digit Opacity"
-              value={settings.textOpacity}
-              min={0.3}
-              max={1}
-              step={0.05}
-              display={`${Math.round(settings.textOpacity * 100)}%`}
-              onChange={(v) => updateSetting('textOpacity', v)}
-            />
-          </div>
-
-          <div className="h-px w-full bg-white/10" />
-
-          <div className="flex flex-col gap-5">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#38e1d6]">
-              Timer & Sound Settings
-            </h3>
-
-            <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/5 p-3.5">
-              <span className="text-sm font-medium text-white">Pomodoro Durations</span>
-              
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-white/70">Focus Time (min)</span>
-                <input
-                  type="number"
-                  min="1"
-                  max="180"
-                  value={workTime}
-                  onChange={(e) => handleWorkChange(Number(e.target.value))}
-                  className="w-16 rounded-md border border-white/15 bg-neutral-900 p-1 text-center text-xs font-bold text-white outline-none focus:border-[#38e1d6]"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-white/70">Break Time (min)</span>
-                <input
-                  type="number"
-                  min="1"
-                  max="60"
-                  value={breakTime}
-                  onChange={(e) => handleBreakChange(Number(e.target.value))}
-                  className="w-16 rounded-md border border-white/15 bg-neutral-900 p-1 text-center text-xs font-bold text-white outline-none focus:border-[#38e1d6]"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-white/70">Long Break Time (min)</span>
-                <input
-                  type="number"
-                  min="1"
-                  max="180"
-                  value={longBreakTime}
-                  onChange={(e) => handleLongBreakChange(Number(e.target.value))}
-                  className="w-16 rounded-md border border-white/15 bg-neutral-900 p-1 text-center text-xs font-bold text-white outline-none focus:border-[#38e1d6]"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-white/70">Long Break Interval</span>
-                <input
-                  type="number"
-                  min="1"
-                  max="12"
-                  value={longBreakInterval}
-                  onChange={(e) => handleIntervalChange(Number(e.target.value))}
-                  className="w-16 rounded-md border border-white/15 bg-neutral-900 p-1 text-center text-xs font-bold text-white outline-none focus:border-[#38e1d6]"
-                />
-              </div>
-
-              <div className="my-1 h-px w-full bg-white/10" />
-
-              <label className="flex cursor-pointer items-center justify-between py-1">
-                <span className="text-xs text-white/70">Auto-start Breaks</span>
-                <input
-                  type="checkbox"
-                  checked={autoStartBreaks}
-                  onChange={(e) => handleAutoBreakToggle(e.target.checked)}
-                  className="h-4 w-4 cursor-pointer rounded border-white/20 bg-neutral-900 text-[#38e1d6] accent-[#38e1d6]"
-                />
-              </label>
-
-              <label className="flex cursor-pointer items-center justify-between py-1">
-                <span className="text-xs text-white/70">Auto-start Focus</span>
-                <input
-                  type="checkbox"
-                  checked={autoStartFocus}
-                  onChange={(e) => handleAutoFocusToggle(e.target.checked)}
-                  className="h-4 w-4 cursor-pointer rounded border-white/20 bg-neutral-900 text-[#38e1d6] accent-[#38e1d6]"
-                />
-              </label>
-            </div>
-
-            <div className="flex flex-col gap-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-white">
-                  Alarm Sound
-                </span>
-                <button
-                  type="button"
-                  onClick={() => previewAlarm(settings.alarmSound)}
-                  disabled={settings.alarmSound === 'silent'}
-                  className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-white/80 transition-colors hover:bg-white/10 disabled:opacity-40"
-                >
-                  <Volume2 className="h-3.5 w-3.5" />
-                  Test Sound
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {ALARM_SOUNDS.map((s) => {
-                  const active = settings.alarmSound === s.value
-                  return (
-                    <button
-                      key={s.value}
-                      type="button"
-                      onClick={() => {
-                        playClick()
-                        updateSetting('alarmSound', s.value)
-                      }}
-                      aria-pressed={active}
-                      className="rounded-lg border px-2 py-2 text-xs font-medium transition-colors duration-150"
-                      style={{
-                        borderColor: active
-                          ? 'rgba(56,225,214,0.6)'
-                          : 'rgba(255,255,255,0.1)',
-                        background: active
-                          ? 'rgba(56,225,214,0.12)'
-                          : 'rgba(255,255,255,0.03)',
-                        color: active ? '#7ff0e7' : 'rgba(255,255,255,0.7)',
-                      }}
-                    >
-                      {s.name}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
+        {/* Tab Navigation */}
+        <div className="flex border-b border-white/10 bg-white/5 p-1.5 gap-1.5 mx-4 mt-4 rounded-xl">
+          <button
+            type="button"
+            onClick={() => setActiveTab('appearance')}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold transition-all ${
+              activeTab === 'appearance'
+                ? 'bg-[#38e1d6]/15 text-[#38e1d6] shadow'
+                : 'text-white/60 hover:text-white'
+            }`}
+          >
+            <Palette className="h-3.5 w-3.5" />
+            Appearance
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('timer')}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold transition-all ${
+              activeTab === 'timer'
+                ? 'bg-[#38e1d6]/15 text-[#38e1d6] shadow'
+                : 'text-white/60 hover:text-white'
+            }`}
+          >
+            <Timer className="h-3.5 w-3.5" />
+            Timer & Sound
+          </button>
         </div>
 
-        <footer className="mt-auto border-t border-white/10 px-5 py-4">
-          <p className="text-xs text-white/50">
+        {/* Tab Content */}
+        <div className="flex flex-col gap-5 overflow-y-auto px-5 py-5">
+          {activeTab === 'appearance' && (
+            <div className="flex flex-col gap-5">
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-4">
+                <EyeStyleGrid
+                  value={settings.eyeStyle}
+                  onChange={(v) => updateSetting('eyeStyle', v)}
+                />
+                <ColorField
+                  label="Eye Color"
+                  presets={EYE_COLOR_PRESETS}
+                  value={settings.eyeColor}
+                  onChange={(v) => updateSetting('eyeColor', v)}
+                />
+              </div>
+
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-4">
+                <ColorField
+                  label="Background Color"
+                  presets={BACKGROUND_PRESETS}
+                  value={settings.backgroundColor}
+                  onChange={(v) => updateSetting('backgroundColor', v)}
+                />
+
+                <DropdownField<BackgroundEffect>
+                  label="Background Effect"
+                  options={BACKGROUND_EFFECTS}
+                  value={settings.backgroundEffect}
+                  onChange={(v) => updateSetting('backgroundEffect', v)}
+                />
+              </div>
+
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
+                <SliderField
+                  label="Eye Scale"
+                  value={settings.eyeScale}
+                  min={0.6}
+                  max={1.4}
+                  step={0.05}
+                  display={`${settings.eyeScale.toFixed(2)}x`}
+                  onChange={(v) => updateSetting('eyeScale', v)}
+                />
+                <SliderField
+                  label="Eye Roundness"
+                  value={settings.eyeRoundness}
+                  min={10}
+                  max={50}
+                  step={2}
+                  display={`${settings.eyeRoundness}%`}
+                  onChange={(v) => updateSetting('eyeRoundness', v)}
+                />
+                <SliderField
+                  label="Digit Opacity"
+                  value={settings.textOpacity}
+                  min={0.3}
+                  max={1}
+                  step={0.05}
+                  display={`${Math.round(settings.textOpacity * 100)}%`}
+                  onChange={(v) => updateSetting('textOpacity', v)}
+                />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'timer' && (
+            <div className="flex flex-col gap-5">
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
+                <span className="text-xs font-semibold text-white/90">Durations (Minutes)</span>
+                
+                <div className="grid grid-cols-2 gap-2.5 pt-1">
+                  <div className="flex flex-col gap-1 rounded-lg border border-white/10 bg-black/20 p-2">
+                    <span className="text-[11px] text-white/60">Focus</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="180"
+                      value={workTime}
+                      onChange={(e) => handleWorkChange(Number(e.target.value))}
+                      className="w-full bg-transparent font-mono text-sm font-bold text-[#38e1d6] outline-none"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1 rounded-lg border border-white/10 bg-black/20 p-2">
+                    <span className="text-[11px] text-white/60">Break</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="60"
+                      value={breakTime}
+                      onChange={(e) => handleBreakChange(Number(e.target.value))}
+                      className="w-full bg-transparent font-mono text-sm font-bold text-[#38e1d6] outline-none"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1 rounded-lg border border-white/10 bg-black/20 p-2">
+                    <span className="text-[11px] text-white/60">Long Break</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="180"
+                      value={longBreakTime}
+                      onChange={(e) => handleLongBreakChange(Number(e.target.value))}
+                      className="w-full bg-transparent font-mono text-sm font-bold text-[#38e1d6] outline-none"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1 rounded-lg border border-white/10 bg-black/20 p-2">
+                    <span className="text-[11px] text-white/60">Long Break Interval</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="12"
+                      value={longBreakInterval}
+                      onChange={(e) => handleIntervalChange(Number(e.target.value))}
+                      className="w-full bg-transparent font-mono text-sm font-bold text-[#38e1d6] outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="my-2 h-px w-full bg-white/10" />
+
+                <label className="flex cursor-pointer items-center justify-between py-1">
+                  <span className="text-xs text-white/80">Auto-start Breaks</span>
+                  <input
+                    type="checkbox"
+                    checked={autoStartBreaks}
+                    onChange={(e) => handleAutoBreakToggle(e.target.checked)}
+                    className="h-4 w-4 cursor-pointer rounded border-white/20 bg-neutral-900 text-[#38e1d6] accent-[#38e1d6]"
+                  />
+                </label>
+
+                <label className="flex cursor-pointer items-center justify-between py-1">
+                  <span className="text-xs text-white/80">Auto-start Focus</span>
+                  <input
+                    type="checkbox"
+                    checked={autoStartFocus}
+                    onChange={(e) => handleAutoFocusToggle(e.target.checked)}
+                    className="h-4 w-4 cursor-pointer rounded border-white/20 bg-neutral-900 text-[#38e1d6] accent-[#38e1d6]"
+                  />
+                </label>
+              </div>
+
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-white/90">
+                    Alarm Sound
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => previewAlarm(settings.alarmSound)}
+                    disabled={settings.alarmSound === 'silent'}
+                    className="flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-white/80 transition-colors hover:bg-white/10 disabled:opacity-40"
+                  >
+                    <Volume2 className="h-3 w-3" />
+                    Test Sound
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {ALARM_SOUNDS.map((s) => {
+                    const active = settings.alarmSound === s.value
+                    return (
+                      <button
+                        key={s.value}
+                        type="button"
+                        onClick={() => {
+                          playClick()
+                          updateSetting('alarmSound', s.value)
+                        }}
+                        aria-pressed={active}
+                        className="rounded-lg border px-2 py-2 text-xs font-medium transition-colors duration-150"
+                        style={{
+                          borderColor: active
+                            ? '#38e1d6'
+                            : 'rgba(255,255,255,0.08)',
+                          background: active
+                            ? 'rgba(56,225,214,0.12)'
+                            : 'rgba(255,255,255,0.03)',
+                          color: active ? '#7ff0e7' : 'rgba(255,255,255,0.7)',
+                        }}
+                      >
+                        {s.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <footer className="mt-auto border-t border-white/10 px-5 py-3">
+          <p className="text-[11px] text-white/40 text-center">
             Your preferences are saved automatically.
           </p>
         </footer>
