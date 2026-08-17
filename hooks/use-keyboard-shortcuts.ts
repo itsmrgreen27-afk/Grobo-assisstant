@@ -5,6 +5,8 @@ import { useEffect } from 'react'
 export type ShortcutHandlers = {
   /** Space — play / pause the active timer or pomodoro. */
   onTogglePlay: () => void
+  /** R — reset the active timer or pomodoro. */
+  onReset?: () => void
   /** M — toggle audio mute. */
   onToggleMute: () => void
   /** F — toggle zen / fullscreen focus mode. */
@@ -31,6 +33,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
 export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
   const {
     onTogglePlay,
+    onReset,
     onToggleMute,
     onToggleZen,
     onExitZen,
@@ -47,6 +50,10 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
         case 'Space':
           e.preventDefault()
           onTogglePlay()
+          break
+        case 'KeyR':
+          e.preventDefault()
+          onReset?.()
           break
         case 'KeyM':
           e.preventDefault()
@@ -76,6 +83,7 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [
     onTogglePlay,
+    onReset,
     onToggleMute,
     onToggleZen,
     onExitZen,
