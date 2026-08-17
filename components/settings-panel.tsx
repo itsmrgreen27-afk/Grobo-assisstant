@@ -1,7 +1,7 @@
 'use client'
 
 import { Check, ChevronDown, Volume2, X } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
   BACKGROUND_EFFECTS,
@@ -23,7 +23,9 @@ type SettingsPanelProps = {
   ) => void
 }
 
-/** Small, accurate preview of a single eye for the style grid. */
+const STORAGE_KEY_WORK = 'pomodoro_work_minutes'
+const STORAGE_KEY_BREAK = 'pomodoro_break_minutes'
+
 function MiniEye({ style, side }: { style: string; side: 'left' | 'right' }) {
   const color = '#38e1d6'
   const base: CSSProperties = { background: color }
@@ -234,6 +236,30 @@ export function SettingsPanel({
   settings,
   updateSetting,
 }: SettingsPanelProps) {
+  const [workTime, setWorkTime] = useState(25)
+  const [breakTime, setBreakTime] = useState(5)
+
+  useEffect(() => {
+    const savedWork = localStorage.getItem(STORAGE_KEY_WORK)
+    const savedBreak = localStorage.getItem(STORAGE_KEY_BREAK)
+    if (savedWork) setWorkTime(Number(savedWork) || 25)
+    if (savedBreak) setBreakTime(Number(savedBreak) || 5)
+  }, [open])
+
+  const handleWorkChange = (val: number) => {
+    const mins = Math.min(180, Math.max(1, val || 1))
+    setWorkTime(mins)
+    localStorage.setItem(STORAGE_KEY_WORK, String(mins))
+    window.dispatchEvent(new Event('pomodoro-settings-updated'))
+  }
+
+  const handleBreakChange = (val: number) => {
+    const mins = Math.min(60, Math.max(1, val || 1))
+    setBreakTime(mins)
+    localStorage.setItem(STORAGE_KEY_BREAK, String(mins))
+    window.dispatchEvent(new Event('pomodoro-settings-updated'))
+  }
+
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
@@ -277,110 +303,144 @@ export function SettingsPanel({
         </header>
 
         <div className="flex flex-col gap-7 overflow-y-auto px-5 py-6">
-          <EyeStyleGrid
-            value={settings.eyeStyle}
-            onChange={(v) => updateSetting('eyeStyle', v)}
-          />
+          <div className="flex flex-col gap-6">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#38e1d6]">
+              Appearance & Character
+            </h3>
+            
+            <EyeStyleGrid
+              value={settings.eyeStyle}
+              onChange={(v) => updateSetting('eyeStyle', v)}
+            />
+
+            <ColorField
+              label="Eye Color"
+              presets={EYE_COLOR_PRESETS}
+              value={settings.eyeColor}
+              onChange={(v) => updateSetting('eyeColor', v)}
+            />
+            <ColorField
+              label="Background Color"
+              presets={BACKGROUND_PRESETS}
+              value={settings.backgroundColor}
+              onChange={(v) => updateSetting('backgroundColor', v)}
+            />
+
+            <DropdownField<BackgroundEffect>
+              label="Background Effect"
+              options={BACKGROUND_EFFECTS}
+              value={settings.backgroundEffect}
+              onChange={(v) => updateSetting('backgroundEffect', v)}
+            />
+
+            <SliderField
+              label="Eye Scale"
+              value={settings.eyeScale}
+              min={0.6}
+              max={1.4}
+              step={0.05}
+              display={`${settings.eyeScale.toFixed(2)}x`}
+              onChange={(v) => updateSetting('eyeScale', v)}
+            />
+            <SliderField
+              label="Eye Roundness"
+              value={settings.eyeRoundness}
+              min={10}
+              max={50}
+              step={2}
+              display={`${settings.eyeRoundness}%`}
+              onChange={(v) => updateSetting('eyeRoundness', v)}
+            />
+
+            <SliderField
+              label="Digit Opacity"
+              value={settings.textOpacity}
+              min={0.3}
+              max={1}
+              step={0.05}
+              display={`${Math.round(settings.textOpacity * 100)}%`}
+              onChange={(v) => updateSetting('textOpacity', v)}
+            />
+          </div>
 
           <div className="h-px w-full bg-white/10" />
 
-          <ColorField
-            label="Eye Color"
-            presets={EYE_COLOR_PRESETS}
-            value={settings.eyeColor}
-            onChange={(v) => updateSetting('eyeColor', v)}
-          />
-          <ColorField
-            label="Background Color"
-            presets={BACKGROUND_PRESETS}
-            value={settings.backgroundColor}
-            onChange={(v) => updateSetting('backgroundColor', v)}
-          />
+          <div className="flex flex-col gap-5">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#38e1d6]">
+              Timer & Sound Settings
+            </h3>
 
-          <DropdownField<BackgroundEffect>
-            label="Background Effect"
-            options={BACKGROUND_EFFECTS}
-            value={settings.backgroundEffect}
-            onChange={(v) => updateSetting('backgroundEffect', v)}
-          />
+            <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/5 p-3.5">
+              <span className="text-sm font-medium text-white">Pomodoro Durations</span>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-white/70">Focus Time (min)</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="180"
+                  value={workTime}
+                  onChange={(e) => handleWorkChange(Number(e.target.value))}
+                  className="w-16 rounded-md border border-white/15 bg-neutral-900 p-1 text-center text-xs font-bold text-white outline-none focus:border-[#38e1d6]"
+                />
+              </div>
 
-          <div className="h-px w-full bg-white/10" />
-
-          <SliderField
-            label="Eye Scale"
-            value={settings.eyeScale}
-            min={0.6}
-            max={1.4}
-            step={0.05}
-            display={`${settings.eyeScale.toFixed(2)}x`}
-            onChange={(v) => updateSetting('eyeScale', v)}
-          />
-          <SliderField
-            label="Eye Roundness"
-            value={settings.eyeRoundness}
-            min={10}
-            max={50}
-            step={2}
-            display={`${settings.eyeRoundness}%`}
-            onChange={(v) => updateSetting('eyeRoundness', v)}
-          />
-
-          <div className="h-px w-full bg-white/10" />
-
-          <SliderField
-            label="Digit Opacity"
-            value={settings.textOpacity}
-            min={0.3}
-            max={1}
-            step={0.05}
-            display={`${Math.round(settings.textOpacity * 100)}%`}
-            onChange={(v) => updateSetting('textOpacity', v)}
-          />
-
-          <div className="h-px w-full bg-white/10" />
-
-          <div className="flex flex-col gap-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-white">
-                Alarm Sound
-              </span>
-              <button
-                type="button"
-                onClick={() => previewAlarm(settings.alarmSound)}
-                disabled={settings.alarmSound === 'silent'}
-                className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-white/80 transition-colors hover:bg-white/10 disabled:opacity-40"
-              >
-                <Volume2 className="h-3.5 w-3.5" />
-                Test Sound
-              </button>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-white/70">Break Time (min)</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={breakTime}
+                  onChange={(e) => handleBreakChange(Number(e.target.value))}
+                  className="w-16 rounded-md border border-white/15 bg-neutral-900 p-1 text-center text-xs font-bold text-white outline-none focus:border-[#38e1d6]"
+                />
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {ALARM_SOUNDS.map((s) => {
-                const active = settings.alarmSound === s.value
-                return (
-                  <button
-                    key={s.value}
-                    type="button"
-                    onClick={() => {
-                      playClick()
-                      updateSetting('alarmSound', s.value)
-                    }}
-                    aria-pressed={active}
-                    className="rounded-lg border px-2 py-2 text-xs font-medium transition-colors duration-150"
-                    style={{
-                      borderColor: active
-                        ? 'rgba(56,225,214,0.6)'
-                        : 'rgba(255,255,255,0.1)',
-                      background: active
-                        ? 'rgba(56,225,214,0.12)'
-                        : 'rgba(255,255,255,0.03)',
-                      color: active ? '#7ff0e7' : 'rgba(255,255,255,0.7)',
-                    }}
-                  >
-                    {s.name}
-                  </button>
-                )
-              })}
+
+            <div className="flex flex-col gap-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-white">
+                  Alarm Sound
+                </span>
+                <button
+                  type="button"
+                  onClick={() => previewAlarm(settings.alarmSound)}
+                  disabled={settings.alarmSound === 'silent'}
+                  className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-white/80 transition-colors hover:bg-white/10 disabled:opacity-40"
+                >
+                  <Volume2 className="h-3.5 w-3.5" />
+                  Test Sound
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {ALARM_SOUNDS.map((s) => {
+                  const active = settings.alarmSound === s.value
+                  return (
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() => {
+                        playClick()
+                        updateSetting('alarmSound', s.value)
+                      }}
+                      aria-pressed={active}
+                      className="rounded-lg border px-2 py-2 text-xs font-medium transition-colors duration-150"
+                      style={{
+                        borderColor: active
+                          ? 'rgba(56,225,214,0.6)'
+                          : 'rgba(255,255,255,0.1)',
+                        background: active
+                          ? 'rgba(56,225,214,0.12)'
+                          : 'rgba(255,255,255,0.03)',
+                        color: active ? '#7ff0e7' : 'rgba(255,255,255,0.7)',
+                      }}
+                    >
+                      {s.name}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </div>
