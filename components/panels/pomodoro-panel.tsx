@@ -34,33 +34,55 @@ export function PomodoroPanel({
   const [isAlarming, setIsAlarming] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  useEffect(() => {
+  const syncSettings = useCallback(() => {
     const savedWork = localStorage.getItem(STORAGE_KEY_WORK)
     const savedBreak = localStorage.getItem(STORAGE_KEY_BREAK)
-    const savedRounds = localStorage.getItem(STORAGE_KEY_ROUNDS)
+
+    let w = 25
+    let b = 5
 
     if (savedWork) {
       const parsedWork = Number(savedWork)
-      if (!isNaN(parsedWork) && parsedWork > 0) {
-        setWorkMinutes(parsedWork)
-        setRemaining(parsedWork * 60)
-      }
+      if (!isNaN(parsedWork) && parsedWork > 0) w = parsedWork
     }
 
     if (savedBreak) {
       const parsedBreak = Number(savedBreak)
-      if (!isNaN(parsedBreak) && parsedBreak > 0) {
-        setBreakMinutes(parsedBreak)
-      }
+      if (!isNaN(parsedBreak) && parsedBreak > 0) b = parsedBreak
     }
 
+    setWorkMinutes(w)
+    setBreakMinutes(b)
+
+    if (!running && !isAlarming) {
+      setRemaining((phase === 'work' ? w : b) * 60)
+    }
+  }, [running, isAlarming, phase])
+
+  useEffect(() => {
+    syncSettings()
+
+    const savedRounds = localStorage.getItem(STORAGE_KEY_ROUNDS)
     if (savedRounds) {
       const parsedRounds = Number(savedRounds)
       if (!isNaN(parsedRounds) && parsedRounds >= 0) {
         setRounds(parsedRounds)
       }
     }
-  }, [])
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY_WORK || e.key === STORAGE_KEY_BREAK) {
+        syncSettings()
+      }
+    }
+    window.addEventListener('storage', handleStorage)
+    window.addEventListener('pomodoro-settings-updated', syncSettings)
+
+    return () => {
+      window.removeEventListener('storage', handleStorage)
+      window.removeEventListener('pomodoro-settings-updated', syncSettings)
+    }
+  }, [syncSettings])
 
   const workSeconds = workMinutes * 60
   const breakSeconds = breakMinutes * 60
@@ -104,7 +126,7 @@ export function PomodoroPanel({
         if (prev <= 1) {
           setIsAlarming(true)
           onAlarm?.()
-          
+
           setRunning(false)
 
           if (phase === 'work') {
@@ -135,24 +157,6 @@ export function PomodoroPanel({
     setRemaining(workMinutes * 60)
   }, [stopAlarmHandler, workMinutes])
 
-  const handleWorkMinutesChange = (val: number) => {
-    const mins = Math.min(180, Math.max(1, val || 1))
-    setWorkMinutes(mins)
-    localStorage.setItem(STORAGE_KEY_WORK, String(mins))
-    if (phase === 'work' && !running && !isAlarming) {
-      setRemaining(mins * 60)
-    }
-  }
-
-  const handleBreakMinutesChange = (val: number) => {
-    const mins = Math.min(60, Math.max(1, val || 1))
-    setBreakMinutes(mins)
-    localStorage.setItem(STORAGE_KEY_BREAK, String(mins))
-    if (phase === 'break' && !running && !isAlarming) {
-      setRemaining(mins * 60)
-    }
-  }
-
   const handleResetRounds = () => {
     setRounds(0)
     localStorage.setItem(STORAGE_KEY_ROUNDS, '0')
@@ -161,7 +165,6 @@ export function PomodoroPanel({
   const formattedTime = formatClock(remaining)
   const isLongTime = formattedTime.length > 5
 
-  // Minimal view when running
   if (running) {
     return (
       <button
@@ -244,34 +247,6 @@ export function PomodoroPanel({
         onReset={reset}
         accent={accent}
       />
-
-      <div className="mt-2 flex items-center gap-4 rounded-xl bg-white/5 p-3 text-xs text-muted-foreground backdrop-blur-sm">
-        <div className="flex items-center gap-2">
-          <span>Focus (m):</span>
-          <input
-            type="number"
-            min="1"
-            max="180"
-            value={workMinutes}
-            onChange={(e) => handleWorkMinutesChange(Number(e.target.value))}
-            className="w-12 rounded bg-black/30 p-1 text-center font-bold text-white outline-none focus:ring-1"
-            style={{ focusRingColor: accent }}
-          />
-        </div>
-        <div className="h-4 w-[1px] bg-white/10" />
-        <div className="flex items-center gap-2">
-          <span>Break (m):</span>
-          <input
-            type="number"
-            min="1"
-            max="60"
-            value={breakMinutes}
-            onChange={(e) => handleBreakMinutesChange(Number(e.target.value))}
-            className="w-12 rounded bg-black/30 p-1 text-center font-bold text-white outline-none focus:ring-1"
-            style={{ focusRingColor: accent }}
-          />
-        </div>
-      </div>
     </div>
   )
 }
