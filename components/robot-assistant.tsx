@@ -137,6 +137,15 @@ export function RobotAssistant() {
     }
   }, [mode, onStopAlarm])
 
+  const handleReset = useCallback(() => {
+    onStopAlarm()
+    if (mode === 'timer') {
+      window.dispatchEvent(new CustomEvent('robo-reset-timer'))
+    } else if (mode === 'pomodoro') {
+      window.dispatchEvent(new CustomEvent('robo-reset-pomodoro'))
+    }
+  }, [mode, onStopAlarm])
+
   const handleToggleMute = useCallback(() => {
     const next = toggleMute()
     setMutedState(next)
@@ -173,6 +182,7 @@ export function RobotAssistant() {
 
   useKeyboardShortcuts({
     onTogglePlay: handleTogglePlay,
+    onReset: handleReset,
     onToggleMute: handleToggleMute,
     onToggleZen: handleToggleZen,
     onExitZen: handleExitZen,
