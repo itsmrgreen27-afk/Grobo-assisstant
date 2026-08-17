@@ -1,14 +1,12 @@
 'use client'
 
-import { Minus, Plus } from 'lucide-react'
 import type { CSSProperties } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { formatClock, TimerControls } from './timer-controls'
 
-const PRESETS = [1, 5, 10, 25]
-
-// High-contrast glow so floating digits read cleanly over the background.
 const DIGIT_SHADOW = '0 2px 24px rgba(0,0,0,0.45)'
+const STORAGE_KEY_MINUTES = 'timer_last_minutes'
+const PRESETS = [1, 5, 10, 15, 25, 30]
 
 export function TimerPanel({
   accent,
@@ -23,32 +21,75 @@ export function TimerPanel({
   onStopAlarm?: () => void
   onCountdown?: (label: string | null) => void
 }) {
-  const [duration, setDuration] = useState(5 * 60)
+  const [minutes, setMinutes] = useState(5)
   const [remaining, setRemaining] = useState(5 * 60)
   const [running, setRunning] = useState(false)
-  const [done, setDone] = useState(false)
+  const [isAlarming, setIsAlarming] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Report the countdown to the parent for tab-title sync.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const saved = localStorage.getItem(STORAGE_KEY_MINUTES)
+    if (saved) {
+      const n = Number(saved)
+      if (!isNaN(n) && n > 0) {
+        setMinutes(n)
+        setRemaining(n * 60)
+      }
+    }
+  }, [])
+
+  const saveMinutes = (m: number) => {
+    setMinutes(m)
+    setRemaining(m * 60)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_MINUTES, String(m))
+    }
+  }
+
+  const stopAlarmHandler = useCallback(() => {
+    if (isAlarming) {
+      onStopAlarm?.()
+      setIsAlarming(false)
+      return true
+    }
+    return false
+  }, [isAlarming, onStopAlarm])
+
+  const togglePlay = useCallback(() => {
+    if (isAlarming) {
+      onStopAlarm?.()
+      setIsAlarming(false)
+      setRunning(true)
+    } else {
+      setRunning((r) => !r)
+    }
+  }, [isAlarming, onStopAlarm])
+
+  const reset = useCallback(() => {
+    stopAlarmHandler()
+    setRunning(false)
+    setRemaining(minutes * 60)
+  }, [minutes, stopAlarmHandler])
+
+  useEffect(() => {
+    const handleToggle = () => togglePlay()
+    const handleReset = () => reset()
+
+    window.addEventListener('robo-toggle-play-timer', handleToggle)
+    window.addEventListener('robo-reset-timer', handleReset)
+
+    return () => {
+      window.removeEventListener('robo-toggle-play-timer', handleToggle)
+      window.removeEventListener('robo-reset-timer', handleReset)
+    }
+  }, [togglePlay, reset])
+
   useEffect(() => {
     onCountdown?.(running ? formatClock(remaining) : null)
   }, [running, remaining, onCountdown])
 
   useEffect(() => () => onCountdown?.(null), [onCountdown])
-
-  const togglePlay = useCallback(() => {
-    if (remaining === 0) return
-    onStopAlarm?.()
-    setDone(false)
-    setRunning((r) => !r)
-  }, [remaining, onStopAlarm])
-
-  // الاستماع للحدث الخاص بالعداد (Timer) فقط
-  useEffect(() => {
-    const handler = () => togglePlay()
-    window.addEventListener('robo-toggle-play-timer', handler)
-    return () => window.removeEventListener('robo-toggle-play-timer', handler)
-  }, [togglePlay])
 
   useEffect(() => {
     if (!running) return
@@ -56,7 +97,7 @@ export function TimerPanel({
       setRemaining((prev) => {
         if (prev <= 1) {
           setRunning(false)
-          setDone(true)
+          setIsAlarming(true)
           onAlarm?.()
           return 0
         }
@@ -68,48 +109,32 @@ export function TimerPanel({
     }
   }, [running, onAlarm])
 
-  const setMinutes = useCallback(
-    (mins: number) => {
-      const secs = Math.max(60, Math.min(99 * 60, mins * 60))
-      onStopAlarm?.()
-      setRunning(false)
-      setDone(false)
-      setDuration(secs)
-      setRemaining(secs)
-    },
-    [onStopAlarm],
-  )
-
-  const adjust = useCallback(
-    (deltaMin: number) => {
-      if (running) return
-      setMinutes(Math.round(duration / 60) + deltaMin)
-    },
-    [duration, running, setMinutes],
-  )
-
-  const reset = useCallback(() => {
-    onStopAlarm?.()
-    setRunning(false)
-    setDone(false)
-    setRemaining(duration)
-  }, [duration, onStopAlarm])
-
-  const idle = !running && remaining === duration
+  const formattedTime = formatClock(remaining)
+  const isLongTime = formattedTime.length > 5
+  const totalSeconds = minutes * 60
+  const progress = totalSeconds > 0 ? 1 - remaining / totalSeconds : 0
 
   if (running) {
     return (
       <button
         type="button"
-        onClick={() => setRunning(false)}
-        className="outline-none"
-        aria-label={`Time remaining ${formatClock(remaining)}. Tap to pause.`}
+        onKeyDown={(e) => {
+          if (e.code === 'Space' || e.code === 'KeyR') e.preventDefault()
+        }}
+        onClick={(e) => {
+          e.currentTarget.blur()
+          togglePlay()
+        }}
+        className="flex flex-col items-center gap-2 outline-none cursor-pointer"
+        aria-label={`Timer running. ${formattedTime} remaining. Tap to pause.`}
       >
         <span
-          className="text-7xl font-bold tabular-nums tracking-tight sm:text-8xl"
+          className={`font-bold tabular-nums tracking-tight transition-all duration-300 ${
+            isLongTime ? 'text-5xl sm:text-6xl' : 'text-7xl sm:text-8xl'
+          }`}
           style={{ ...digitStyle, textShadow: DIGIT_SHADOW }}
         >
-          {formatClock(remaining)}
+          {formattedTime}
         </span>
       </button>
     )
@@ -117,67 +142,68 @@ export function TimerPanel({
 
   return (
     <div className="flex flex-col items-center gap-5">
-      <div className="flex flex-wrap items-center justify-center gap-2">
-        {PRESETS.map((m) => {
-          const active = duration === m * 60
-          return (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setMinutes(m)}
-              className="rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-200"
-              style={{
-                background: active ? `${accent}22` : 'transparent',
-                color: active ? accent : 'var(--muted-foreground)',
-              }}
-            >
-              {m}m
-            </button>
-          )
-        })}
+      <div className="flex flex-wrap items-center justify-center gap-1.5">
+        {PRESETS.map((p) => (
+          <button
+            key={p}
+            type="button"
+            onClick={(e) => {
+              e.currentTarget.blur()
+              stopAlarmHandler()
+              saveMinutes(p)
+            }}
+            className="rounded-full px-3 py-1 text-xs font-semibold tracking-wider transition active:scale-95"
+            style={{
+              background: minutes === p ? `${accent}22` : 'rgba(255,255,255,0.08)',
+              color: minutes === p ? accent : 'var(--muted-foreground)',
+            }}
+          >
+            {p}m
+          </button>
+        ))}
       </div>
 
-      <div className="flex items-center gap-5">
-        <button
-          type="button"
-          onClick={() => adjust(-1)}
-          disabled={running}
-          className="flex h-9 w-9 items-center justify-center rounded-full text-foreground/70 transition hover:text-foreground disabled:opacity-30"
-          aria-label="Decrease one minute"
-        >
-          <Minus className="h-5 w-5" />
-        </button>
+      <div className="relative flex items-center justify-center">
+        <svg width="180" height="180" viewBox="0 0 180 180" className="-rotate-90">
+          <circle cx="90" cy="90" r="82" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="4" />
+          <circle
+            cx="90"
+            cy="90"
+            r="82"
+            fill="none"
+            stroke={accent}
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeDasharray={2 * Math.PI * 82}
+            strokeDashoffset={2 * Math.PI * 82 * (1 - progress)}
+            style={{ transition: 'stroke-dashoffset 1s linear' }}
+          />
+        </svg>
         <span
-          className="text-6xl font-bold tabular-nums tracking-tight transition-colors sm:text-7xl"
-          style={{
-            ...digitStyle,
-            color: done ? accent : (digitStyle?.color ?? 'var(--foreground)'),
-            textShadow: DIGIT_SHADOW,
-          }}
+          className={`absolute font-bold tabular-nums tracking-tight transition-all duration-300 ${
+            isLongTime ? 'text-3xl' : 'text-5xl'
+          }`}
+          style={{ ...digitStyle, textShadow: DIGIT_SHADOW }}
         >
-          {formatClock(remaining)}
+          {formattedTime}
         </span>
-        <button
-          type="button"
-          onClick={() => adjust(1)}
-          disabled={running}
-          className="flex h-9 w-9 items-center justify-center rounded-full text-foreground/70 transition hover:text-foreground disabled:opacity-30"
-          aria-label="Increase one minute"
-        >
-          <Plus className="h-5 w-5" />
-        </button>
-      </div>
-
-      <div className="h-4 text-xs font-medium text-muted-foreground">
-        {done ? "Time's up!" : idle ? 'Ready' : 'Paused'}
       </div>
 
       <TimerControls
         running={running}
-        onToggle={togglePlay}
-        onReset={reset}
+        onToggle={() => {
+          if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur()
+          }
+          togglePlay()
+        }}
+        onReset={() => {
+          if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur()
+          }
+          reset()
+        }}
         accent={accent}
-        disabled={remaining === 0 && !running}
       />
     </div>
   )
