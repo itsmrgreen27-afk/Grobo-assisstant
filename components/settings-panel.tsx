@@ -25,6 +25,10 @@ type SettingsPanelProps = {
 
 const STORAGE_KEY_WORK = 'pomodoro_work_minutes'
 const STORAGE_KEY_BREAK = 'pomodoro_break_minutes'
+const STORAGE_KEY_LONG_BREAK = 'pomodoro_long_break_minutes'
+const STORAGE_KEY_INTERVAL = 'pomodoro_long_break_interval'
+const STORAGE_KEY_AUTO_BREAK = 'pomodoro_auto_start_breaks'
+const STORAGE_KEY_AUTO_FOCUS = 'pomodoro_auto_start_focus'
 
 function MiniEye({ style, side }: { style: string; side: 'left' | 'right' }) {
   const color = '#38e1d6'
@@ -238,26 +242,69 @@ export function SettingsPanel({
 }: SettingsPanelProps) {
   const [workTime, setWorkTime] = useState(25)
   const [breakTime, setBreakTime] = useState(5)
+  const [longBreakTime, setLongBreakTime] = useState(15)
+  const [longBreakInterval, setLongBreakInterval] = useState(4)
+  const [autoStartBreaks, setAutoStartBreaks] = useState(false)
+  const [autoStartFocus, setAutoStartFocus] = useState(false)
 
   useEffect(() => {
     const savedWork = localStorage.getItem(STORAGE_KEY_WORK)
     const savedBreak = localStorage.getItem(STORAGE_KEY_BREAK)
+    const savedLongBreak = localStorage.getItem(STORAGE_KEY_LONG_BREAK)
+    const savedInterval = localStorage.getItem(STORAGE_KEY_INTERVAL)
+    const savedAutoBreak = localStorage.getItem(STORAGE_KEY_AUTO_BREAK)
+    const savedAutoFocus = localStorage.getItem(STORAGE_KEY_AUTO_FOCUS)
+
     if (savedWork) setWorkTime(Number(savedWork) || 25)
     if (savedBreak) setBreakTime(Number(savedBreak) || 5)
+    if (savedLongBreak) setLongBreakTime(Number(savedLongBreak) || 15)
+    if (savedInterval) setLongBreakInterval(Number(savedInterval) || 4)
+    if (savedAutoBreak) setAutoStartBreaks(savedAutoBreak === 'true')
+    if (savedAutoFocus) setAutoFocus(savedAutoFocus === 'true')
   }, [open])
+
+  const notifyUpdate = () => {
+    window.dispatchEvent(new Event('pomodoro-settings-updated'))
+  }
 
   const handleWorkChange = (val: number) => {
     const mins = Math.min(180, Math.max(1, val || 1))
     setWorkTime(mins)
     localStorage.setItem(STORAGE_KEY_WORK, String(mins))
-    window.dispatchEvent(new Event('pomodoro-settings-updated'))
+    notifyUpdate()
   }
 
   const handleBreakChange = (val: number) => {
     const mins = Math.min(60, Math.max(1, val || 1))
     setBreakTime(mins)
     localStorage.setItem(STORAGE_KEY_BREAK, String(mins))
-    window.dispatchEvent(new Event('pomodoro-settings-updated'))
+    notifyUpdate()
+  }
+
+  const handleLongBreakChange = (val: number) => {
+    const mins = Math.min(180, Math.max(1, val || 1))
+    setLongBreakTime(mins)
+    localStorage.setItem(STORAGE_KEY_LONG_BREAK, String(mins))
+    notifyUpdate()
+  }
+
+  const handleIntervalChange = (val: number) => {
+    const interval = Math.min(12, Math.max(1, val || 1))
+    setLongBreakInterval(interval)
+    localStorage.setItem(STORAGE_KEY_INTERVAL, String(interval))
+    notifyUpdate()
+  }
+
+  const handleAutoBreakToggle = (val: boolean) => {
+    setAutoStartBreaks(val)
+    localStorage.setItem(STORAGE_KEY_AUTO_BREAK, String(val))
+    notifyUpdate()
+  }
+
+  const handleAutoFocusToggle = (val: boolean) => {
+    setAutoStartFocus(val)
+    localStorage.setItem(STORAGE_KEY_AUTO_FOCUS, String(val))
+    notifyUpdate()
   }
 
   useEffect(() => {
@@ -396,6 +443,52 @@ export function SettingsPanel({
                   className="w-16 rounded-md border border-white/15 bg-neutral-900 p-1 text-center text-xs font-bold text-white outline-none focus:border-[#38e1d6]"
                 />
               </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-white/70">Long Break Time (min)</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="180"
+                  value={longBreakTime}
+                  onChange={(e) => handleLongBreakChange(Number(e.target.value))}
+                  className="w-16 rounded-md border border-white/15 bg-neutral-900 p-1 text-center text-xs font-bold text-white outline-none focus:border-[#38e1d6]"
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-white/70">Long Break Interval</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="12"
+                  value={longBreakInterval}
+                  onChange={(e) => handleIntervalChange(Number(e.target.value))}
+                  className="w-16 rounded-md border border-white/15 bg-neutral-900 p-1 text-center text-xs font-bold text-white outline-none focus:border-[#38e1d6]"
+                />
+              </div>
+
+              <div className="my-1 h-px w-full bg-white/10" />
+
+              <label className="flex cursor-pointer items-center justify-between py-1">
+                <span className="text-xs text-white/70">Auto-start Breaks</span>
+                <input
+                  type="checkbox"
+                  checked={autoStartBreaks}
+                  onChange={(e) => handleAutoBreakToggle(e.target.checked)}
+                  className="h-4 w-4 cursor-pointer rounded border-white/20 bg-neutral-900 text-[#38e1d6] accent-[#38e1d6]"
+                />
+              </label>
+
+              <label className="flex cursor-pointer items-center justify-between py-1">
+                <span className="text-xs text-white/70">Auto-start Focus</span>
+                <input
+                  type="checkbox"
+                  checked={autoStartFocus}
+                  onChange={(e) => handleAutoFocusToggle(e.target.checked)}
+                  className="h-4 w-4 cursor-pointer rounded border-white/20 bg-neutral-900 text-[#38e1d6] accent-[#38e1d6]"
+                />
+              </label>
             </div>
 
             <div className="flex flex-col gap-2.5">
