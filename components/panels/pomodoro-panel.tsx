@@ -63,16 +63,11 @@ export function PomodoroPanel({
     setLongBreakInterval(inter)
     setAutoStartBreaks(savedAutoBreak === 'true')
     setAutoFocus(savedAutoFocus === 'true')
-
-    if (!running && !isAlarming) {
-      if (phase === 'work') setRemaining(w * 60)
-      else if (phase === 'break') setRemaining(b * 60)
-      else setRemaining(lb * 60)
-    }
-  }, [running, isAlarming, phase])
+  }, [])
 
   useEffect(() => {
     syncSettings()
+    if (phase === 'work') setRemaining(workMinutes * 60)
 
     if (typeof window !== 'undefined') {
       const savedRounds = localStorage.getItem(STORAGE_KEY_ROUNDS)
@@ -93,6 +88,14 @@ export function PomodoroPanel({
       window.removeEventListener('pomodoro-settings-updated', syncSettings)
     }
   }, [syncSettings])
+
+  useEffect(() => {
+    if (!running && !isAlarming) {
+      if (phase === 'work') setRemaining(workMinutes * 60)
+      else if (phase === 'break') setRemaining(breakMinutes * 60)
+      else setRemaining(longBreakMinutes * 60)
+    }
+  }, [phase, workMinutes, breakMinutes, longBreakMinutes, isAlarming])
 
   const getCurrentTotalSeconds = () => {
     if (phase === 'work') return workMinutes * 60
@@ -127,11 +130,26 @@ export function PomodoroPanel({
     }
   }, [isAlarming, onStopAlarm])
 
+  const reset = useCallback(() => {
+    stopAlarmHandler()
+    setRunning(false)
+    setPhase('work')
+    setRemaining(workMinutes * 60)
+  }, [stopAlarmHandler, workMinutes])
+
+  // الاستماع للأحداث الخاصة باختصارات لوحة المفاتيح
   useEffect(() => {
-    const handler = () => togglePlay()
-    window.addEventListener('robo-toggle-play-pomodoro', handler)
-    return () => window.removeEventListener('robo-toggle-play-pomodoro', handler)
-  }, [togglePlay])
+    const handleToggle = () => togglePlay()
+    const handleReset = () => reset()
+
+    window.addEventListener('robo-toggle-play-pomodoro', handleToggle)
+    window.addEventListener('robo-reset-pomodoro', handleReset)
+
+    return () => {
+      window.removeEventListener('robo-toggle-play-pomodoro', handleToggle)
+      window.removeEventListener('robo-reset-pomodoro', handleReset)
+    }
+  }, [togglePlay, reset])
 
   useEffect(() => {
     if (!running) return
@@ -180,13 +198,6 @@ export function PomodoroPanel({
     autoStartFocus,
   ])
 
-  const reset = useCallback(() => {
-    stopAlarmHandler()
-    setRunning(false)
-    setPhase('work')
-    setRemaining(workMinutes * 60)
-  }, [stopAlarmHandler, workMinutes])
-
   const handleResetRounds = () => {
     setRounds(0)
     if (typeof window !== 'undefined') {
@@ -207,8 +218,14 @@ export function PomodoroPanel({
     return (
       <button
         type="button"
-        onClick={() => setRunning(false)}
-        className="flex flex-col items-center gap-2 outline-none"
+        onKeyDown={(e) => {
+          if (e.code === 'Space' || e.code === 'KeyR') e.preventDefault()
+        }}
+        onClick={(e) => {
+          e.currentTarget.blur()
+          togglePlay()
+        }}
+        className="flex flex-col items-center gap-2 outline-none cursor-pointer"
         aria-label={`${getPhaseLabel()} time remaining ${formattedTime}. Tap to pause.`}
       >
         <span
@@ -245,7 +262,10 @@ export function PomodoroPanel({
         </span>
         <button
           type="button"
-          onClick={handleResetRounds}
+          onClick={(e) => {
+            e.currentTarget.blur()
+            handleResetRounds()
+          }}
           className="text-xs font-medium text-muted-foreground transition hover:text-white"
           title="Click to reset completed rounds"
         >
@@ -281,8 +301,18 @@ export function PomodoroPanel({
 
       <TimerControls
         running={running}
-        onToggle={togglePlay}
-        onReset={reset}
+        onToggle={() => {
+          if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur()
+          }
+          togglePlay()
+        }}
+        onReset={() => {
+          if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur()
+          }
+          reset()
+        }}
         accent={accent}
       />
     </div>
